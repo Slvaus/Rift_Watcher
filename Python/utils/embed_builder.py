@@ -128,7 +128,7 @@ def create_match_result_embed(
     won = bool(participant_info.get("win"))
 
     # 基本の絵文字と色の設定
-    title_icon = "🏆" if won else "💀"
+    title_icon = "🏆" if won else "🔥"
     color = discord.Color.green() if won else discord.Color.red()
 
     # AIスコアの値を取得して整数にする
@@ -145,7 +145,7 @@ def create_match_result_embed(
             if score_val <= 25:
                 color = discord.Color.light_gray()
             if ai_rank == 10:
-                title_icon = "🗿"
+                title_icon = "💀"
 
     game_mode = get_game_mode_name_jp(match_info)
     kda = (
