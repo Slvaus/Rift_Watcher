@@ -67,18 +67,24 @@ class DeepLoLClient:
                 if response.status in (200, 201):
                     text = await response.text()
                     if "completed" in text:
-                        logger.info(f"DeepLoL更新要求成功: puuid={puuid}, region={region}")
+                        logger.debug(f"DeepLoL refresh accepted: puuid={puuid}, region={region}")
                         return True
                     else:
-                        logger.warning(f"DeepLoL更新要求レスポンス異常: {text}")
+                        logger.debug(f"DeepLoL refresh returned unexpected body: {text}")
                 else:
-                    logger.warning(f"DeepLoL更新要求エラー: Status={response.status}")
+                    logger.debug(f"DeepLoL refresh returned status={response.status}")
         except Exception as e:
             logger.error(f"DeepLoL更新要求中に例外が発生しました: {e}")
         return False
 
-    async def get_match_ai_score(self, match_id: str, region: str, riot_id: str, champion_id: int) -> float | None:
-        """DeepLoLの内部APIから対象プレイヤーのAIスコアを取得します。"""
+    async def get_match_ai_score_result(
+        self,
+        match_id: str,
+        region: str,
+        riot_id: str,
+        champion_id: int,
+    ) -> dict | None:
+        """DeepLoLの内部APIから対象プレイヤーのAIスコアと順位を取得します。"""
         await self.init_session()
         platform_id = self._normalize_platform_id(region)
         url = f"https://b2c-api-cdn.deeplol.gg/match/match-cached?match_id={match_id}&platform_id={platform_id}"
@@ -95,7 +101,25 @@ class DeepLoLClient:
                 if response.status == 200:
                     data = await response.json()
                     participants = data.get("participants_list", [])
-                    
+
+                    scored_participants = []
+                    for p in participants:
+                        ai_score = p.get("ai_score")
+                        if ai_score is None:
+                            continue
+                        try:
+                            scored_participants.append((p, float(ai_score)))
+                        except (TypeError, ValueError):
+                            continue
+
+                    score_rank_by_participant_id = {}
+                    if len(scored_participants) == len(participants) and scored_participants:
+                        sorted_scores = sorted(scored_participants, key=lambda item: item[1], reverse=True)
+                        score_rank_by_participant_id = {
+                            id(participant): rank
+                            for rank, (participant, _score) in enumerate(sorted_scores, 1)
+                        }
+
                     for p in participants:
                         p_name = (
                             p.get("riot_id_game_name")
@@ -115,14 +139,25 @@ class DeepLoLClient:
                         if name_matches and p_tag == target_tag and p_champ_id == champion_id:
                             ai_score = p.get("ai_score")
                             if ai_score is not None:
-                                return float(ai_score)
+                                return {
+                                    "score": float(ai_score),
+                                    "rank": score_rank_by_participant_id.get(id(p)),
+                                }
                                 
-                    logger.warning(f"DeepLoLマッチ情報に対象のプレイヤー(Tag: {target_tag}, ChampionID: {champion_id})が見つかりませんでした。")
+                    logger.debug(
+                        f"DeepLoL score not ready: tag={target_tag}, champion_id={champion_id}, match_id={match_id}"
+                    )
                 else:
-                    logger.warning(f"DeepLoLマッチ情報取得エラー: Status={response.status}")
+                    logger.debug(f"DeepLoL match cache returned status={response.status}: match_id={match_id}")
         except Exception as e:
             logger.error(f"DeepLoL AIスコア取得中に例外が発生しました: {e}")
         return None
+
+    async def get_match_ai_score(self, match_id: str, region: str, riot_id: str, champion_id: int) -> float | None:
+        result = await self.get_match_ai_score_result(match_id, region, riot_id, champion_id)
+        if result is None:
+            return None
+        return result["score"]
 
     async def ensure_summoner_exists(self, riot_id: str, region: str) -> bool:
         """指定したRiot IDのサモナーがDeepLoLに登録されているか確認し、無ければ登録（ロード）を要求します。"""
@@ -139,12 +174,12 @@ class DeepLoLClient:
                 if response.status == 200:
                     data = await response.json()
                     if isinstance(data, dict) and "summoner_basic_info_dict" in data:
-                        logger.info(f"DeepLoLサモナー存在確認・登録成功: {riot_id}")
+                        logger.debug(f"DeepLoL summoner ready: {riot_id}")
                         return True
                     else:
-                        logger.warning(f"DeepLoLサモナーレスポンス構造異常: {data}")
+                        logger.debug(f"DeepLoL summoner response shape unexpected: {data}")
                 else:
-                    logger.warning(f"DeepLoLサモナー存在確認レスポンス異常: Status={response.status}")
+                    logger.debug(f"DeepLoL summoner lookup returned status={response.status}: {riot_id}")
         except Exception as e:
             logger.error(f"DeepLoLサモナー存在確認中に例外が発生しました: {e}")
         return False

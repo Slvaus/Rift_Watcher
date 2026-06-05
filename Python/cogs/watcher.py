@@ -223,7 +223,7 @@ class GameWatcher(commands.Cog):
         if not pending_scores:
             return
 
-        logger.info(f"DeepLoL AIスコア待ち状態を確認します: {len(pending_scores)} 件")
+        logger.debug(f"DeepLoL AIスコア待ち状態: {len(pending_scores)} 件")
         for pending in pending_scores:
             try:
                 match_info = json.loads(pending["match_info_json"])
@@ -252,21 +252,24 @@ class GameWatcher(commands.Cog):
             await asyncio.sleep(5)
 
             ai_score = None
+            ai_rank = None
             for attempt in range(1, 7):
-                logger.info(f"DeepLoL AIスコア取得試行 ({attempt}/6): match_id={game['match_id']}")
-                ai_score = await self.deeplol.get_match_ai_score(
+                logger.debug(f"DeepLoL AIスコア取得試行 ({attempt}/6): match_id={game['match_id']}")
+                ai_result = await self.deeplol.get_match_ai_score_result(
                     game["match_id"],
                     game["region"],
                     game["riot_id"],
                     participant_info.get("championId"),
                 )
-                if ai_score is not None:
-                    logger.info(f"DeepLoL AIスコア取得成功: {ai_score}")
+                if ai_result is not None:
+                    ai_score = ai_result["score"]
+                    ai_rank = ai_result.get("rank")
+                    logger.debug(f"DeepLoL AIスコア取得成功: match_id={game['match_id']} score={ai_score}")
                     break
                 await asyncio.sleep(20)
 
             if ai_score is None:
-                logger.warning(f"DeepLoL AIスコアの取得に失敗しました: match_id={game['match_id']}")
+                logger.debug(f"DeepLoL AIスコアはまだ取得できません: match_id={game['match_id']}")
                 return
 
             champion_name = self.get_champion_name(participant_info.get("championId"))
@@ -277,6 +280,7 @@ class GameWatcher(commands.Cog):
                 self.latest_lol_version,
                 champion_name,
                 ai_score,
+                ai_rank,
             )
             if message is None:
                 channel = self.bot.get_channel(game["channel_id"])
@@ -286,7 +290,7 @@ class GameWatcher(commands.Cog):
 
             await message.edit(embed=new_embed)
             await self.db.remove_pending_ai_score(game["match_id"], game["puuid"], game["channel_id"])
-            logger.info(f"DeepLoL AIスコアで試合結果を再更新: {game['match_id']}")
+            logger.info(f"AIスコアを反映: {game['riot_id']} / {ai_score:.0f}")
         except asyncio.CancelledError:
             raise
         except discord.NotFound:

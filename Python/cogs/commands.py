@@ -163,17 +163,25 @@ class WatcherCommands(commands.Cog):
 
         # GameWatcherコグからdeeplolクライアントを利用してAIスコアを取得
         ai_score = None
+        ai_rank = None
         watcher_cog = self.bot.get_cog("GameWatcher")
         if watcher_cog and hasattr(watcher_cog, "deeplol"):
             # キャッシュから取得を試みる
-            ai_score = await watcher_cog.deeplol.get_match_ai_score(match_id, region, riot_id, champion_id)
+            ai_result = await watcher_cog.deeplol.get_match_ai_score_result(match_id, region, riot_id, champion_id)
+            if ai_result is not None:
+                ai_score = ai_result["score"]
+                ai_rank = ai_result.get("rank")
+
             if ai_score is None:
                 # 同期（更新）を要求し、待機して再取得
-                logger.info(f"AI Score not found in cache. Refreshing DeepLoL data for {riot_id}...")
+                logger.debug(f"DeepLoL AI score cache miss: {riot_id}")
                 await watcher_cog.deeplol.ensure_summoner_exists(riot_id, region)
                 await watcher_cog.deeplol.refresh_matches(puuid, region)
                 await asyncio.sleep(4)
-                ai_score = await watcher_cog.deeplol.get_match_ai_score(match_id, region, riot_id, champion_id)
+                ai_result = await watcher_cog.deeplol.get_match_ai_score_result(match_id, region, riot_id, champion_id)
+                if ai_result is not None:
+                    ai_score = ai_result["score"]
+                    ai_rank = ai_result.get("rank")
 
         embed = create_match_result_embed(
             {"riot_id": riot_id, "region": region, "match_id": match_id},
@@ -182,6 +190,7 @@ class WatcherCommands(commands.Cog):
             latest_lol_version,
             champion_name,
             ai_score,
+            ai_rank,
         )
 
         await interaction.followup.send(

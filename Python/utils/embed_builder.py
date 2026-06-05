@@ -4,7 +4,8 @@ import discord
 
 from Python.config import DEEPLOL_REGION_MAP, GAME_MODE_MAPPING, QUEUE_ID_MAPPING
 
-SECOND_COLUMN_PREFIX = "\u3000"
+COLUMN_PAD = "\u2800"
+FIRST_COLUMN_TITLE_SUFFIX = COLUMN_PAD * 2
 
 
 def _deeplol_region(region: str) -> str:
@@ -98,10 +99,14 @@ def create_game_start_embed(
         color=discord.Color.blue(),
     )
     embed.set_thumbnail(url=_profile_icon_url(participant_info, latest_lol_version))
-    embed.add_field(name="ゲームモード", value=get_game_mode_name_jp(game_info), inline=True)
     embed.add_field(
-        name=f"{SECOND_COLUMN_PREFIX}チャンピオン",
-        value=f"{SECOND_COLUMN_PREFIX}{champion_name}",
+        name=f"ゲームモード{FIRST_COLUMN_TITLE_SUFFIX}",
+        value=get_game_mode_name_jp(game_info),
+        inline=True,
+    )
+    embed.add_field(
+        name="チャンピオン",
+        value=champion_name,
         inline=True,
     )
     return embed
@@ -114,6 +119,7 @@ def create_match_result_embed(
     latest_lol_version: str,
     champion_name: str,
     ai_score: float | None = None,
+    ai_rank: int | None = None,
 ) -> discord.Embed:
     won = bool(participant_info.get("win"))
 
@@ -129,12 +135,12 @@ def create_match_result_embed(
         if won:
             if score_val >= 75:
                 color = discord.Color.gold()
-            if score_val >= 100:  # 完勝
+            if ai_rank == 1:
                 title_icon = "👑"
         else:
             if score_val <= 25:
                 color = discord.Color.light_gray()
-            if score_val <= 10:  # 惨敗
+            if ai_rank == 10:
                 title_icon = "🗿"
 
     game_mode = get_game_mode_name_jp(match_info)
@@ -159,10 +165,10 @@ def create_match_result_embed(
         url=_champion_icon_url(participant_info, latest_lol_version)
         or _profile_icon_url(participant_info, latest_lol_version)
     )
-    embed.add_field(name="ゲームモード", value=game_mode, inline=True)
+    embed.add_field(name=f"ゲームモード{FIRST_COLUMN_TITLE_SUFFIX}", value=game_mode, inline=True)
     embed.add_field(
-        name=f"{SECOND_COLUMN_PREFIX}チャンピオン",
-        value=f"{SECOND_COLUMN_PREFIX}{champion_name}",
+        name="チャンピオン",
+        value=champion_name,
         inline=True,
     )
     embed.add_field(name="\u200b", value="\u200b", inline=True)
@@ -175,8 +181,8 @@ def create_match_result_embed(
 
     embed.add_field(name="AIスコア", value=score_text, inline=True)
     embed.add_field(
-        name=f"{SECOND_COLUMN_PREFIX}KDA",
-        value=f"{SECOND_COLUMN_PREFIX}{kda}",
+        name="KDA",
+        value=kda,
         inline=True,
     )
     embed.add_field(name="\u200b", value="\u200b", inline=True)
