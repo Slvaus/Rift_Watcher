@@ -16,6 +16,10 @@ def _deeplol_riot_id(riot_id: str) -> str:
     return quote(riot_id.replace("#", "-"))
 
 
+def _riot_id_name(riot_id: str) -> str:
+    return riot_id.split("#", 1)[0]
+
+
 def _champion_icon_url(participant_info: dict, latest_lol_version: str) -> str | None:
     champion_slug = participant_info.get("championName")
     if not champion_slug:
@@ -94,7 +98,7 @@ def create_game_start_embed(
     )
 
     embed = discord.Embed(
-        title=f"⚔️ {riot_id} が試合を開始",
+        title=f"⚔️ {_riot_id_name(riot_id)} が試合を開始",
         url=deeplol_url,
         color=discord.Color.blue(),
     )
@@ -157,7 +161,7 @@ def create_match_result_embed(
     )
 
     embed = discord.Embed(
-        title=f"{title_icon} {game_track_info['riot_id']} の試合が終了",
+        title=f"{title_icon} {_riot_id_name(game_track_info['riot_id'])} の試合が終了",
         url=match_url,
         color=color,
     )
