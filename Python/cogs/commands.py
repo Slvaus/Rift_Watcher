@@ -1,4 +1,5 @@
 from datetime import datetime
+import asyncio
 
 import discord
 from discord import app_commands
@@ -159,12 +160,28 @@ class WatcherCommands(commands.Cog):
 
         champion_id = participant_info.get("championId", 0)
         latest_lol_version, champion_name = self._get_champion_display_context(champion_id)
+
+        # GameWatcherコグからdeeplolクライアントを利用してAIスコアを取得
+        ai_score = None
+        watcher_cog = self.bot.get_cog("GameWatcher")
+        if watcher_cog and hasattr(watcher_cog, "deeplol"):
+            # キャッシュから取得を試みる
+            ai_score = await watcher_cog.deeplol.get_match_ai_score(match_id, region, riot_id, champion_id)
+            if ai_score is None:
+                # 同期（更新）を要求し、待機して再取得
+                logger.info(f"AI Score not found in cache. Refreshing DeepLoL data for {riot_id}...")
+                await watcher_cog.deeplol.ensure_summoner_exists(riot_id, region)
+                await watcher_cog.deeplol.refresh_matches(puuid, region)
+                await asyncio.sleep(4)
+                ai_score = await watcher_cog.deeplol.get_match_ai_score(match_id, region, riot_id, champion_id)
+
         embed = create_match_result_embed(
             {"riot_id": riot_id, "region": region, "match_id": match_id},
             match_info,
             participant_info,
             latest_lol_version,
             champion_name,
+            ai_score,
         )
 
         await interaction.followup.send(

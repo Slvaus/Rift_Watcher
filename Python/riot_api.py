@@ -68,8 +68,11 @@ class RiotAPIClient:
                 )
                 await asyncio.sleep(2 ** attempt)
             except aiohttp.ClientError as e:
-                logger.error(f"Riot API クライアントエラー: {e} - URL: {url}")
-                return None, f"Client Error: {e}"
+                logger.warning(
+                    f"Riot API クライアントエラー ({e})。 "
+                    f"再試行します... (試行回数: {attempt}/{max_retries}) - URL: {url}"
+                )
+                await asyncio.sleep(2 ** attempt)
             except Exception as e:
                 logger.error(f"Riot API リクエスト中に予期せぬエラー: {e}")
                 return None, f"Unexpected Error: {e}"

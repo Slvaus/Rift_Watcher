@@ -49,7 +49,6 @@ LOG_FILE = "rift_watcher.log"
 # --- INTERVALS & TIMEOUTS (秒) ---
 NEW_GAME_CHECK_INTERVAL = 60
 FINISHED_GAME_CHECK_INTERVAL = 180
-COMMAND_PROCESSOR_INTERVAL = 1
 
 API_TIMEOUT = 10
 API_CALL_INTERVAL_NEW_GAME = 2
@@ -76,14 +75,26 @@ REGION_MAPPING = {
 }
 
 QUEUE_ID_MAPPING = {
-    400: "ノーマル (ドラフト)",
-    420: "ランク (ソロ/デュオ)",
-    430: "ノーマル (ブラインド)",
-    440: "ランク (フレックス)",
-    450: "ランダムミッド (ARAM)",
+    0: "カスタム",
+    400: "ノーマル",
+    420: "ランク",
+    430: "ノーマル",
+    440: "フレックス",
+    450: "ランダムミッド",
+    480: "スイフトプレイ",
+    490: "クイックプレイ",
     700: "Clash",
     1700: "アリーナ",
     1900: "URF",
+}
+
+GAME_MODE_MAPPING = {
+    "ARAM": "ランダムミッド",
+    "CLASSIC": "クラシック",
+    "CHERRY": "アリーナ",
+    "KIWI": "ランダムミッド",
+    "SWIFTPLAY": "スイフトプレイ",
+    "URF": "URF",
 }
 
 DEEPLOL_REGION_MAP = {
