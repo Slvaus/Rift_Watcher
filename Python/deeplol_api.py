@@ -1,10 +1,17 @@
 import aiohttp
+import ssl
 import urllib.parse
+
+import certifi
+
 from Python.utils.logger import logger
 
 class DeepLoLClient:
     def __init__(self):
         self.session = None
+
+    def _create_ssl_context(self):
+        return ssl.create_default_context(cafile=certifi.where())
 
     async def init_session(self):
         """HTTPセッションの初期化を行います。"""
@@ -15,7 +22,8 @@ class DeepLoLClient:
                 'Origin': 'https://www.deeplol.gg',
                 'Referer': 'https://www.deeplol.gg/'
             }
-            self.session = aiohttp.ClientSession(headers=headers)
+            connector = aiohttp.TCPConnector(ssl=self._create_ssl_context())
+            self.session = aiohttp.ClientSession(headers=headers, connector=connector)
 
     async def close(self):
         """セッションをクローズします。"""

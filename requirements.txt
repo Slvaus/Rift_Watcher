@@ -1,4 +1,5 @@
 # requirements.txt
 discord.py>=2.3.0
 aiohttp>=3.9.0
+certifi>=2024.2.2
 python-dotenv>=1.0.0
