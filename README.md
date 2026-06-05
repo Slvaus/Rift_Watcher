@@ -1,158 +1,141 @@
 # Rift Watcher
-![image](example.png)
 
+![Rift Watcher preview](example.png)
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+Rift Watcher は、League of Legends の指定プレイヤーを Discord で監視するための Bot です。
 
-A high-performance Discord bot that notifies you when a registered League of Legends player starts a match, and automatically updates the message with the match results upon completion.
+監視対象のプレイヤーが試合を開始すると Discord に通知し、試合終了後は同じメッセージを自動で試合結果に更新します。結果メッセージには勝敗、KDA、チャンピオン、試合時間、与ダメージ、キル関与率などをコンパクトに表示します。
 
-**[🇯🇵 日本語のドキュメントはこちら](#-日本語)**
+## 主な機能
 
----
+- Riot ID とリージョンを指定して監視対象を登録
+- 登録済みプレイヤーの試合開始を定期チェック
+- 試合開始時に Discord へ embed 通知
+- 試合終了後、開始通知メッセージを試合結果へ自動更新
+- 試合結果タイトルから DeepLoL の詳細ページへ移動
+- チャンピオンアイコン付きの見やすい結果表示
+- 表示調整用に、直近の対戦履歴から結果メッセージを確認できるデバッグコマンドを搭載
+- 通常運用では静かな CLI ログ、必要な時だけ DEBUG ログを表示
 
-### 🇬🇧 English
+## 必要なもの
 
-This bot provides a seamless way to track the matches of your favorite League of Legends players directly within your Discord server.
+- Python 3.10 以上
+- Discord Bot Token
+- Riot Games API Key
 
-#### ✨ Key Features
+Discord Bot Token は [Discord Developer Portal](https://discord.com/developers/applications) から取得します。
+Riot Games API Key は [Riot Developer Portal](https://developer.riotgames.com/) から取得します。
 
-- **Easy Registration**: Register players to monitor by their Riot ID and region using a simple slash command (`/summonerset`).
-- **Automatic Match Detection**: The bot periodically checks for new matches from all registered players in the background.
-- **Instant Notifications**: Sends a rich embed message to a designated channel the moment a new match starts.
-- **Live Game Link**: The notification title links directly to the player's live game on DeepLoL for easy spectating.
-- **Automatic Result Updates**: Once the match is over, the initial notification message is **automatically edited** to show the match results (Win/Loss, KDA).
-- **Detailed Match History**: The updated message title links to the detailed match history page on DeepLoL.
-- **Robust & Reliable**: Built with asynchronous processing to handle API communications without blocking the bot. Player and match data are stored persistently.
+## セットアップ
 
-#### 🔧 Setup Guide
+1. リポジトリを取得します。
 
-1.  **Prerequisites**:
-    -   Python 3.10 or higher
-    -   A Discord Bot Token ([Discord Developer Portal](https://discord.com/developers/applications))
-    -   A Riot Games API Key ([Riot Developer Portal](https://developer.riotgames.com/))
+```bash
+git clone https://github.com/KamiGamix/Rift_Watcher.git
+cd Rift_Watcher
+```
 
-2.  **Clone the Repository**:
-    ```bash
-    git clone https://github.com/KamiGamix/Rift_Watcher.git
-    cd https://github.com/KamiGamix/Rift_Watcher.git
-    ```
+2. 仮想環境を作成して有効化します。
 
-3.  **Install Dependencies**:
-    It is recommended to use a virtual environment.
-    ```bash
-    # For Windows
-    python -m venv venv
-    .\venv\Scripts\activate
-    # For macOS/Linux
-    python3 -m venv venv
-    source venv/bin/activate
-    
-    pip install -r requirements.txt
-    ```
+Windows:
 
-4.  **Configure Environment Variables**:
-    Create a `.env` file in the project root by copying the example file.
-    ```bash
-    cp .env.example .env
-    ```
-    Now, open the `.env` file and fill in your tokens.
-    ```ini
-    DISCORD_TOKEN="Your_Discord_Bot_Token_Here"
-    RIOT_API_KEY="Your_Riot_API_Key_Here"
-    ```
+```powershell
+python -m venv venv
+.\venv\Scripts\activate
+```
 
-5.  **Run the Bot**:
-    ```bash
-    python Python/main.py
-    ```
-    The bot should now be online and ready to accept commands.
+macOS / Linux:
 
----
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
 
-### 📜 Command Reference
+3. 依存パッケージをインストールします。
 
-| Command             | Description                                       | Arguments                       | Example                                  |
-| ------------------- | ------------------------------------------------- | ------------------------------- | ---------------------------------------- |
-| `/summonerset`      | Registers or updates a summoner to monitor.       | `riot_id`, `region`             | `/summonerset riot_id:Faker#KR1 region:KR` |
-| `/summonerremove`   | Removes a summoner from the monitoring list.      | `riot_id` (with autocomplete)   | `/summonerremove riot_id:Faker#KR1`      |
+```bash
+pip install -r requirements.txt
+```
 
----
+4. Bot を起動します。
 
-### 📄 License
+```bash
+python Python/main.py
+```
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+初回起動時に `.env` が存在しない、または必要な値が不足している場合は、ターミナル上で `DISCORD_TOKEN` と `RIOT_API_KEY` の入力を求められます。入力された値はプロジェクトルートの `.env` に保存されます。
 
----
----
+```ini
+DISCORD_TOKEN="Your Discord Bot Token"
+RIOT_API_KEY="Your Riot Games API Key"
+```
 
-## 🇯🇵 日本語
+## Discord コマンド
 
-指定したLeague of Legendsプレイヤーが試合を開始した際にDiscordへ通知し、試合終了後には自動で対戦結果に更新する、高機能なボットです。
+| コマンド | 説明 | 引数 | 例 |
+| --- | --- | --- | --- |
+| `/summonerset` | 監視対象のサモナーを登録・更新します。 | `riot_id`, `region` | `/summonerset riot_id:Faker#KR1 region:KR` |
+| `/summonerremove` | このチャンネルの監視リストからサモナーを削除します。 | `riot_id` | `/summonerremove riot_id:Faker#KR1` |
+| `/summonerslist` | このチャンネルで監視中のサモナー一覧を表示します。 | なし | `/summonerslist` |
+| `/debuglatestmatch` | 指定した Riot ID の直近試合を使って、試合結果メッセージを表示します。表示デザインの確認に使います。 | `riot_id`, `region`, `public` | `/debuglatestmatch riot_id:Faker#KR1 region:KR public:false` |
 
-#### ✨ 主な機能
+`/debuglatestmatch` は通常、自分だけに見える ephemeral メッセージとして表示されます。`public:true` を指定すると、チャンネルに公開表示できます。
 
-- **簡単なプレイヤー登録**: スラッシュコマンド (`/summonerset`) を使うだけで、Riot IDと地域を指定して監視対象プレイヤーを登録できます。
-- **試合の自動検知**: 登録された全プレイヤーの試合状況をバックグラウンドで定期的にチェックします。
-- **即時通知**: 新しい試合が始まった瞬間、指定されたチャンネルにリッチな埋め込みメッセージを送信します。
-- **観戦用リンク**: 通知メッセージのタイトルは、DeepLoLの観戦ページにリンクしており、すぐに試合を観戦できます。
-- **結果の自動更新**: 試合が終了すると、最初の通知メッセージが**自動的に編集**され、試合結果（勝利/敗北、KDA）に置き換わります。
-- **詳細な戦績**: 更新後のメッセージは、DeepLoLの詳細な試合履歴ページにリンクします。
-- **堅牢・高信頼性**: API通信などは非同期で処理されるため、ボットの応答が遅延しません。プレイヤーや試合のデータは永続的に保存されます。
+## 対応リージョン
 
-#### 🔧 セットアップガイド
+`BR1`, `EUN1`, `EUW1`, `JP1`, `KR`, `LA1`, `LA2`, `NA1`, `OC1`, `TR1`, `RU`, `PH2`, `SG2`, `TH2`, `TW2`, `VN2`
 
-1.  **必要なもの**:
-    -   Python 3.10 以上
-    -   Discordボットトークン ([Discord Developer Portal](https://discord.com/developers/applications))
-    -   Riot Games APIキー ([Riot Developer Portal](https://developer.riotgames.com/))
+## 試合結果メッセージ
 
-2.  **リポジトリをクローン**:
-    ```bash
-    git clone https://github.com/KamiGamix/Rift_Watcher.git
-    cd https://github.com/KamiGamix/Rift_Watcher.git
-    ```
+試合終了後の embed には以下の情報を表示します。
 
-3.  **依存ライブラリをインストール**:
-    仮想環境の利用を推奨します。
-    ```bash
-    # Windowsの場合
-    python -m venv venv
-    .\venv\Scripts\activate
-    # macOS/Linuxの場合
-    python3 -m venv venv
-    source venv/bin/activate
-    
-    pip install -r requirements.txt
-    ```
+- Riot ID
+- 勝敗
+- ゲームモード
+- 使用チャンピオン
+- KDA
+- 試合時間
+- 与ダメージ
+- キル関与率
+- チャンピオンアイコン
 
-4.  **環境変数の設定**:
-    サンプルファイルをコピーして `.env` ファイルを作成します。
-    ```bash
-    cp .env.example .env
-    ```
-    作成した `.env` ファイルを開き、あなたのトークンを記述します。
-    ```ini
-    DISCORD_TOKEN="ここにあなたのDiscordボットトークン"
-    RIOT_API_KEY="ここにあなたのRiot APIキー"
-    ```
+タイトルは DeepLoL の試合詳細ページにリンクしています。
 
-5.  **ボットを起動**:
-    ```bash
-    python Python/main.py
-    ```
-    ボットがオンラインになり、コマンドを受け付けられる状態になります。
+## ログ
 
----
+通常のコンソールログは、運用時に見やすいよう短く抑えています。
 
-### 📜 コマンドリファレンス
+詳細ログを確認したい場合は、起動前に `RIFT_CONSOLE_LOG_LEVEL` を設定してください。
 
-| コマンド            | 説明                                      | 引数                            | 実行例                                   |
-| ------------------- | ----------------------------------------- | ------------------------------- | ---------------------------------------- |
-| `/summonerset`      | 監視対象のサモナーを登録・更新します。    | `riot_id`, `region`             | `/summonerset riot_id:Faker#KR1 region:KR` |
-| `/summonerremove`   | 監視リストからサモナーを削除します。      | `riot_id` (入力補完あり)        | `/summonerremove riot_id:Faker#KR1`      |
+Windows PowerShell:
 
----
+```powershell
+$env:RIFT_CONSOLE_LOG_LEVEL='DEBUG'
+python Python/main.py
+```
 
-### 📄 ライセンス
+macOS / Linux:
 
-このプロジェクトはMITライセンスの下で公開されています。詳細は [LICENSE](LICENSE) ファイルをご覧ください。
+```bash
+RIFT_CONSOLE_LOG_LEVEL=DEBUG python Python/main.py
+```
+
+ログファイルは `rift_watcher.log` に出力されます。実行時に生成される `db.sqlite`、ログファイル、Python キャッシュは Git 管理対象外です。
+
+## データ保存
+
+監視対象と追跡中の試合情報は SQLite の `db.sqlite` に保存されます。
+
+古い `db.json` が存在する場合は、起動時に SQLite へ自動移行され、移行後の元ファイルは `db.json.bak` にリネームされます。
+
+## 開発メモ
+
+表示メッセージの調整を行う場合は、実際の監視ループを待たずに `/debuglatestmatch` を使うと確認しやすくなります。
+
+```text
+/debuglatestmatch riot_id:確認したいRiotID#TAG region:JP1 public:false
+```
+
+## ライセンス
+
+MIT License です。詳細は [LICENSE](LICENSE) を確認してください。
